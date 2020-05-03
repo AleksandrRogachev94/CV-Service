@@ -14,6 +14,7 @@ import (
 )
 
 func main() {
+	viper.AutomaticEnv()
 	viper.SetConfigFile(".env")
 	viper.ReadInConfig()
 
