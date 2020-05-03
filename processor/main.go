@@ -10,7 +10,6 @@ import (
 )
 
 func main() {
-	test
 	viper.SetConfigFile(".env")
 	viper.ReadInConfig()
 
