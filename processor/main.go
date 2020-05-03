@@ -20,6 +20,6 @@ func main() {
 	}
 	grpcServer := grpc.NewServer()
 	RegisterCVServiceServer(grpcServer, newServer())
-	fmt.Printf("Listening on port %s...", port)
+	fmt.Printf("Listening on port %s...\n", port)
 	grpcServer.Serve(lis)
 }

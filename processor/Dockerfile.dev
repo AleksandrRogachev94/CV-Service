@@ -9,4 +9,4 @@ RUN go mod download
 RUN go get github.com/githubnemo/CompileDaemon
 COPY . .
 
-CMD CompileDaemon --build="go build ." --command=./api
+CMD CompileDaemon --build="go build ." --command=./processor
