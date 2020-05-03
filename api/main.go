@@ -9,20 +9,25 @@ import (
 
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/spf13/viper"
+	grpc "google.golang.org/grpc"
 )
 
 func main() {
-	fmt.Println("Connecting to grpc...")
-	// dialOpts := []grpc.DialOption{grpc.WithBlock(), grpc.WithInsecure()}
-	// conn, err := grpc.Dial(":8082", dialOpts...)
-	// if err != nil {
-	// 	log.Fatalf("fail to dial: %v", err)
-	// }
-	// defer conn.Close()
-	fmt.Println("Connected to grpc")
-	// client := NewCVServiceClient(conn)
+	viper.SetConfigFile(".env")
+	viper.ReadInConfig()
 
-	port := "8081"
+	fmt.Println("Connecting to grpc...")
+	dialOpts := []grpc.DialOption{grpc.WithBlock(), grpc.WithInsecure()}
+	conn, err := grpc.Dial(viper.Get("PROCESSOR_ADDRESS").(string), dialOpts...)
+	if err != nil {
+		log.Fatalf("fail to dial: %v", err)
+	}
+	defer conn.Close()
+	client := NewCVServiceClient(conn)
+	fmt.Println("Connected to grpc")
+
+	port := viper.Get("PORT").(string)
 	logger := log.New(os.Stdout, "http: ", log.LstdFlags)
 	router := mux.NewRouter()
 
@@ -37,7 +42,7 @@ func main() {
 	}
 
 	router.Handle("/health", healthHandler()).Methods("GET")
-	// router.Handle("/recognitions", recognize(client)).Methods("POST")
+	router.Handle("/recognitions", recognize(client)).Methods("POST")
 	router.Handle("/recognitions", recognizeIndex()).Methods("GET")
 	router.Handle("/recognitions/{id}", recognizeShow()).Methods("GET")
 

@@ -1,0 +1,16 @@
+version: '3'
+services:
+  processor:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./processor
+    volumes:
+      - ./processor:/app
+      - /app/bin
+  api:
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./api
+    volumes:
+      - ./api:/app
+      - /app/bin

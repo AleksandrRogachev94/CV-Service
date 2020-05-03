@@ -13,7 +13,7 @@ func main() {
 	viper.SetConfigFile(".env")
 	viper.ReadInConfig()
 
-	port := "8082"
+	port := viper.Get("PORT").(string)
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
