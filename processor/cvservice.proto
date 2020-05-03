@@ -1,0 +1,19 @@
+syntax = "proto3";
+package main;
+
+service CVService {
+  rpc Recognize(RecognizeRequest) returns (RecognizeResponse) {}
+}
+
+message FileLocation {
+  string bucket = 1;
+  string key = 2;
+}
+
+message RecognizeRequest {
+  FileLocation file = 1;
+}
+
+message RecognizeResponse {
+  repeated FileLocation files = 2;
+}
