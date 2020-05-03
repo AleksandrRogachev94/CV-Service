@@ -1,5 +1,13 @@
 version: '3'
 services:
+  nginx:
+    restart: always
+    build:
+      dockerfile: Dockerfile.dev
+      context: ./nginx
+    ports:
+      - '8080:80'
+
   processor:
     build:
       dockerfile: Dockerfile.dev
@@ -8,7 +16,8 @@ services:
       - ./processor:/app
       - /app/bin
     environment:
-      - PORT=8082
+      - PORT=8081
+
   api:
     build:
       dockerfile: Dockerfile.dev
@@ -16,8 +25,6 @@ services:
     volumes:
       - ./api:/app
       - /app/bin
-    ports:
-      - '8081:8081'
     environment:
-        - PORT=8081
-        - PROCESSOR_ADDRESS=processor:8082
+      - PORT=8080
+      - PROCESSOR_ADDRESS=processor:8081
