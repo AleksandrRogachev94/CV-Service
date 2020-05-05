@@ -37,7 +37,7 @@ func main() {
 		Handler:      handlers.LoggingHandler(os.Stdout, router),
 		ErrorLog:     logger,
 		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		WriteTimeout: 20 * time.Second,
 		// WriteTimeout: 1 * time.Millisecond,
 		IdleTimeout: 15 * time.Second,
 	}

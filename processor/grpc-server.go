@@ -8,6 +8,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -17,6 +18,21 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/spf13/viper"
 )
+
+// ProcessInstanceResult - Result of processing single recognize response instance
+type ProcessInstanceResult struct {
+	bucket string
+	key    string
+	err    error
+}
+
+// helper function to measure execution time
+func elapsed(what string) func() {
+	start := time.Now()
+	return func() {
+		fmt.Printf("%s took %v\n", what, time.Since(start))
+	}
+}
 
 type cvServiceServer struct {
 	UnimplementedCVServiceServer
@@ -53,7 +69,6 @@ func (s *cvServiceServer) Recognize(ctx context.Context, r *RecognizeRequest) (*
 	}
 	result, err := s.rekognition.DetectLabels(input)
 	if err != nil {
-		fmt.Println(err)
 		return nil, err
 	}
 	fmt.Println(result)
@@ -90,7 +105,6 @@ func (s *cvServiceServer) getSubImage(src *image.Image, box rekognition.Bounding
 	y0 := int(*box.Top * dy)
 	xn := int((*box.Left + *box.Width) * dx)
 	yn := int((*box.Top + *box.Height) * dy)
-	fmt.Println(x0, y0, xn, yn)
 	subImage := rgbSrc.SubImage(image.Rect(x0, y0, xn, yn))
 	return &subImage, nil
 }
@@ -110,30 +124,57 @@ func (s *cvServiceServer) uploadImage(image *image.Image, bucket string, key str
 	return err
 }
 
+func (s *cvServiceServer) processInstance(
+	src *image.Image,
+	inst *rekognition.Instance,
+	label *rekognition.Label,
+	prefix int,
+	bucket string,
+	key string,
+	ch chan ProcessInstanceResult,
+) {
+	dx := float64((*src).Bounds().Dx())
+	dy := float64((*src).Bounds().Dy())
+	subImage, err := s.getSubImage(src, *inst.BoundingBox, dx, dy)
+	if err != nil {
+		ch <- ProcessInstanceResult{bucket: "", key: "", err: err}
+		return
+	}
+
+	uploadKey := fmt.Sprintf("%s-results/%s-%.2f/%d-%.2f.png", key, *label.Name, *label.Confidence, prefix, *inst.Confidence)
+	err = s.uploadImage(subImage, bucket, uploadKey)
+	if err != nil {
+		ch <- ProcessInstanceResult{bucket: "", key: "", err: err}
+		return
+	}
+
+	ch <- ProcessInstanceResult{bucket: bucket, key: uploadKey, err: nil}
+}
+
 func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket string, key string, r *rekognition.DetectLabelsOutput) ([]*FileLocation, error) {
+	defer elapsed("processRecognizeResult")()
 	var files []*FileLocation
 
 	src, err := s.downloadSource(bucket, key)
 	if err != nil {
 		return nil, err
 	}
-	dx := float64((*src).Bounds().Dx())
-	dy := float64((*src).Bounds().Dy())
 
+	ch := make(chan ProcessInstanceResult)
+
+	cnt := 0
 	for _, label := range r.Labels {
 		for j, inst := range label.Instances {
-			subImage, err := s.getSubImage(src, *inst.BoundingBox, dx, dy)
-			if err != nil {
-				return nil, err
-			}
-
-			uploadKey := fmt.Sprintf("%s-results/%s-%.2f/%d-%.2f.png", key, *label.Name, *label.Confidence, j, *inst.Confidence)
-			err = s.uploadImage(subImage, bucket, uploadKey)
-			if err != nil {
-				return nil, err
-			}
-			files = append(files, &FileLocation{Bucket: bucket, Key: uploadKey})
+			go s.processInstance(src, inst, label, j, bucket, key, ch)
+			cnt++
 		}
+	}
+	for i := 0; i < cnt; i++ {
+		instRes := <-ch
+		if instRes.err != nil {
+			return nil, err
+		}
+		files = append(files, &FileLocation{Bucket: instRes.bucket, Key: instRes.key})
 	}
 	return files, nil
 }

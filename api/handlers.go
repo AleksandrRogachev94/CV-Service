@@ -53,7 +53,7 @@ func recognizeShow() http.Handler {
 func recognize(grpcClient CVServiceClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 		t, _ := ctx.Deadline()
 		fmt.Println("--->", t)
