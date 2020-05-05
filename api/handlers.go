@@ -53,15 +53,21 @@ func recognizeShow() http.Handler {
 func recognize(grpcClient CVServiceClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		ctx, cancel := context.WithTimeout(r.Context(), 1*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 		defer cancel()
 		t, _ := ctx.Deadline()
 		fmt.Println("--->", t)
-		// get url params
-		// vars := mux.Vars(r)
 
-		// get todo from grpc channel
-		file := FileLocation{Bucket: "go-cvservice", Key: "birds2.jpg"}
+		var data map[string]string
+		err := json.NewDecoder(r.Body).Decode(&data)
+
+		if data["bucket"] == "" || data["key"] == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		// send request to from grpc channel
+		file := FileLocation{Bucket: data["bucket"], Key: data["key"]}
 		files, err := grpcClient.Recognize(ctx, &RecognizeRequest{File: &file})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
