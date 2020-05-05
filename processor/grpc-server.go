@@ -19,14 +19,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// ProcessInstanceResult - Result of processing single recognize response instance
-type ProcessInstanceResult struct {
-	bucket string
-	key    string
-	err    error
-}
-
-// helper function to measure execution time
+// Helper function to measure execution time
 func elapsed(what string) func() {
 	start := time.Now()
 	return func() {
@@ -34,6 +27,14 @@ func elapsed(what string) func() {
 	}
 }
 
+// Result of processing single recognize response instance
+type processInstanceResult struct {
+	bucket string
+	key    string
+	err    error
+}
+
+// Struct holding grcp server instance. Includes instantiated aws-related services.
 type cvServiceServer struct {
 	UnimplementedCVServiceServer
 	rekognition *rekognition.Rekognition
@@ -41,6 +42,7 @@ type cvServiceServer struct {
 	uploader    *s3manager.Uploader
 }
 
+// Create new grpc server instance
 func newServer() *cvServiceServer {
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String("us-east-1"),
@@ -56,6 +58,7 @@ func newServer() *cvServiceServer {
 	return &cvServiceServer{rekognition: svc, downloader: downloader, uploader: uploader}
 }
 
+// Recognize labels in the provided image and extract + upload bounding boxes.
 func (s *cvServiceServer) Recognize(ctx context.Context, r *RecognizeRequest) (*RecognizeResponse, error) {
 	input := &rekognition.DetectLabelsInput{
 		Image: &rekognition.Image{
@@ -81,13 +84,16 @@ func (s *cvServiceServer) Recognize(ctx context.Context, r *RecognizeRequest) (*
 	return resPt, nil
 }
 
+// Download source file from S3 and convert it to in-memory jpeg image.
 func (s *cvServiceServer) downloadSource(bucket string, key string) (*image.Image, error) {
+	// use temporary buffer to store download results
 	var awsBuff aws.WriteAtBuffer
 	_, err := s.downloader.Download(&awsBuff,
 		&s3.GetObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(key),
 		})
+	// use temporary buffer to stream donwload results to image instance.
 	srcBuff := bytes.NewReader(awsBuff.Bytes())
 	src, err := jpeg.Decode(srcBuff)
 
@@ -97,6 +103,7 @@ func (s *cvServiceServer) downloadSource(bucket string, key string) (*image.Imag
 	return &src, nil
 }
 
+// Get subImage by cropping src within box
 func (s *cvServiceServer) getSubImage(src *image.Image, box rekognition.BoundingBox, dx float64, dy float64) (*image.Image, error) {
 	rgbSrc := (*src).(interface {
 		SubImage(r image.Rectangle) image.Image
@@ -109,6 +116,7 @@ func (s *cvServiceServer) getSubImage(src *image.Image, box rekognition.Bounding
 	return &subImage, nil
 }
 
+// Upload given image to s3 bucket
 func (s *cvServiceServer) uploadImage(image *image.Image, bucket string, key string) error {
 	var subBuff bytes.Buffer
 	png.Encode(&subBuff, *image)
@@ -124,6 +132,7 @@ func (s *cvServiceServer) uploadImage(image *image.Image, bucket string, key str
 	return err
 }
 
+// Use recognize result instance to extract subImage from src and upload it to s3
 func (s *cvServiceServer) processInstance(
 	src *image.Image,
 	inst *rekognition.Instance,
@@ -131,26 +140,27 @@ func (s *cvServiceServer) processInstance(
 	prefix int,
 	bucket string,
 	key string,
-	ch chan ProcessInstanceResult,
+	ch chan processInstanceResult,
 ) {
 	dx := float64((*src).Bounds().Dx())
 	dy := float64((*src).Bounds().Dy())
 	subImage, err := s.getSubImage(src, *inst.BoundingBox, dx, dy)
 	if err != nil {
-		ch <- ProcessInstanceResult{bucket: "", key: "", err: err}
+		ch <- processInstanceResult{bucket: "", key: "", err: err}
 		return
 	}
 
 	uploadKey := fmt.Sprintf("%s-results/%s-%.2f/%d-%.2f.png", key, *label.Name, *label.Confidence, prefix, *inst.Confidence)
 	err = s.uploadImage(subImage, bucket, uploadKey)
 	if err != nil {
-		ch <- ProcessInstanceResult{bucket: "", key: "", err: err}
+		ch <- processInstanceResult{bucket: "", key: "", err: err}
 		return
 	}
 
-	ch <- ProcessInstanceResult{bucket: bucket, key: uploadKey, err: nil}
+	ch <- processInstanceResult{bucket: bucket, key: uploadKey, err: nil}
 }
 
+// Process results returned from aws rekognize service
 func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket string, key string, r *rekognition.DetectLabelsOutput) ([]*FileLocation, error) {
 	defer elapsed("processRecognizeResult")()
 	var files []*FileLocation
@@ -160,7 +170,7 @@ func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket strin
 		return nil, err
 	}
 
-	ch := make(chan ProcessInstanceResult)
+	ch := make(chan processInstanceResult)
 
 	cnt := 0
 	for _, label := range r.Labels {
