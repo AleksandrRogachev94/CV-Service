@@ -66,54 +66,70 @@ func (s *cvServiceServer) Recognize(ctx context.Context, r *RecognizeRequest) (*
 	return resPt, nil
 }
 
-func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket string, key string, r *rekognition.DetectLabelsOutput) ([]*FileLocation, error) {
-	var files []*FileLocation
-
+func (s *cvServiceServer) downloadSource(bucket string, key string) (*image.Image, error) {
 	var awsBuff aws.WriteAtBuffer
 	_, err := s.downloader.Download(&awsBuff,
 		&s3.GetObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(key),
 		})
-	if err != nil {
-		return nil, err
-	}
-
 	srcBuff := bytes.NewReader(awsBuff.Bytes())
 	src, err := jpeg.Decode(srcBuff)
+
 	if err != nil {
 		return nil, err
 	}
+	return &src, nil
+}
 
-	dx := float64(src.Bounds().Dx())
-	dy := float64(src.Bounds().Dy())
+func (s *cvServiceServer) getSubImage(src *image.Image, box rekognition.BoundingBox, dx float64, dy float64) (*image.Image, error) {
+	rgbSrc := (*src).(interface {
+		SubImage(r image.Rectangle) image.Image
+	})
+	x0 := int(*box.Left * dx)
+	y0 := int(*box.Top * dy)
+	xn := int((*box.Left + *box.Width) * dx)
+	yn := int((*box.Top + *box.Height) * dy)
+	fmt.Println(x0, y0, xn, yn)
+	subImage := rgbSrc.SubImage(image.Rect(x0, y0, xn, yn))
+	return &subImage, nil
+}
+
+func (s *cvServiceServer) uploadImage(image *image.Image, bucket string, key string) error {
+	var subBuff bytes.Buffer
+	png.Encode(&subBuff, *image)
+	acl := "public-read"
+	contentType := "image/png"
+	_, err := s.uploader.Upload(&s3manager.UploadInput{
+		Bucket:      aws.String(bucket),
+		Key:         aws.String(key),
+		Body:        &subBuff,
+		ACL:         &acl,
+		ContentType: &contentType,
+	})
+	return err
+}
+
+func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket string, key string, r *rekognition.DetectLabelsOutput) ([]*FileLocation, error) {
+	var files []*FileLocation
+
+	src, err := s.downloadSource(bucket, key)
+	if err != nil {
+		return nil, err
+	}
+	dx := float64((*src).Bounds().Dx())
+	dy := float64((*src).Bounds().Dy())
 
 	for _, label := range r.Labels {
 		for j, inst := range label.Instances {
-			rgbSrc := src.(interface {
-				SubImage(r image.Rectangle) image.Image
-			})
-			x0 := int(*inst.BoundingBox.Left * dx)
-			y0 := int(*inst.BoundingBox.Top * dy)
-			xn := int((*inst.BoundingBox.Left + *inst.BoundingBox.Width) * dx)
-			yn := int((*inst.BoundingBox.Top + *inst.BoundingBox.Height) * dy)
-			fmt.Println(x0, y0, xn, yn)
-			subImage := rgbSrc.SubImage(image.Rect(x0, y0, xn, yn))
-
-			var subBuff bytes.Buffer
-			png.Encode(&subBuff, subImage)
-			acl := "public-read"
-			contentType := "image/png"
-			uploadKey := fmt.Sprintf("%s-results/%s-%.2f/%d-%.2f.png", key, *label.Name, *label.Confidence, j, *inst.Confidence)
-			_, err := s.uploader.Upload(&s3manager.UploadInput{
-				Bucket:      aws.String(bucket),
-				Key:         aws.String(uploadKey),
-				Body:        &subBuff,
-				ACL:         &acl,
-				ContentType: &contentType,
-			})
+			subImage, err := s.getSubImage(src, *inst.BoundingBox, dx, dy)
 			if err != nil {
-				fmt.Println(err)
+				return nil, err
+			}
+
+			uploadKey := fmt.Sprintf("%s-results/%s-%.2f/%d-%.2f.png", key, *label.Name, *label.Confidence, j, *inst.Confidence)
+			err = s.uploadImage(subImage, bucket, uploadKey)
+			if err != nil {
 				return nil, err
 			}
 			files = append(files, &FileLocation{Bucket: bucket, Key: uploadKey})
