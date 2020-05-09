@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react';
 import axios from 'axios';
 
+import Typography from '@material-ui/core/Typography';
+import UploadFile from './upload-file'
+
 const Upload = () => {
   useEffect(() => {
     (async () => {
@@ -9,7 +12,10 @@ const Upload = () => {
     })()
   }, [])
   return (
-    <h1>Upload Page</h1>
+    <>
+      <Typography variant="h3">Upload New Image</Typography>
+      <UploadFile />
+    </>
   );
 };
 

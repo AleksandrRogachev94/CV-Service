@@ -1,8 +1,10 @@
 import React from 'react';
 
+import Typography from '@material-ui/core/Typography';
+
 const About = () => {
   return (
-    <h1>About New Image</h1>
+    <Typography variant="h3">About</Typography>
   );
 };
 

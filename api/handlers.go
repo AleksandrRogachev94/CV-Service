@@ -7,6 +7,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 )
 
@@ -79,6 +82,32 @@ func recognize(grpcClient CVServiceClient) http.Handler {
 		// respond with received todo
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(files); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	})
+}
+
+func upload(uploader *s3manager.Uploader) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bucket := "go-cvservice-assets"
+		key := (uuid.New()).String() + ".jpg"
+		acl := "public-read"
+		contentType := "image/jpeg"
+		_, err := uploader.Upload(&s3manager.UploadInput{
+			Bucket:      aws.String(bucket),
+			Key:         aws.String(key),
+			Body:        r.Body,
+			ACL:         &acl,
+			ContentType: &contentType,
+		})
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		file := FileLocation{Key: key, Bucket: bucket}
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(file); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
