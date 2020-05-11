@@ -1,0 +1,19 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t alexrogachev/client-test -f Dockerfile.dev ./client
+script:
+  - docker run -e CI=true alexrogachev/client-test npm test
+after_success:
+  - docker build -t alexrogachev/cv-client ./client
+  - docker build -t alexrogachev/cv-api ./api
+  - docker build -t alexrogachev/cv-processor ./processor
+  - docker build -t alexrogachev/cv-nginx ./nginx
+
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker push alexrogachev/cv-client
+  - docker push alexrogachev/cv-api
+  - docker push alexrogachev/cv-processor
+  - docker push alexrogachev/cv-nginx
