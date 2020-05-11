@@ -29,9 +29,8 @@ func elapsed(what string) func() {
 
 // Result of processing single recognize response instance
 type processInstanceResult struct {
-	bucket string
-	key    string
-	err    error
+	RecognizeResponseItem
+	err error
 }
 
 // Struct holding grcp server instance. Includes instantiated aws-related services.
@@ -76,11 +75,11 @@ func (s *cvServiceServer) Recognize(ctx context.Context, r *RecognizeRequest) (*
 	}
 	fmt.Println(result)
 
-	files, err := s.processRecognizeResult(ctx, r.File.Bucket, r.File.Key, result)
+	items, err := s.processRecognizeResult(ctx, r.File.Bucket, r.File.Key, result)
 	if err != nil {
 		return nil, err
 	}
-	resPt := &RecognizeResponse{Files: files}
+	resPt := &RecognizeResponse{Items: items}
 	return resPt, nil
 }
 
@@ -146,24 +145,28 @@ func (s *cvServiceServer) processInstance(
 	dy := float64((*src).Bounds().Dy())
 	subImage, err := s.getSubImage(src, *inst.BoundingBox, dx, dy)
 	if err != nil {
-		ch <- processInstanceResult{bucket: "", key: "", err: err}
+		ch <- processInstanceResult{err: err}
 		return
 	}
 
 	uploadKey := fmt.Sprintf("%s-results/%s-%.2f/%d-%.2f.png", key, *label.Name, *label.Confidence, prefix, *inst.Confidence)
 	err = s.uploadImage(subImage, bucket, uploadKey)
 	if err != nil {
-		ch <- processInstanceResult{bucket: "", key: "", err: err}
+		ch <- processInstanceResult{err: err}
 		return
 	}
 
-	ch <- processInstanceResult{bucket: bucket, key: uploadKey, err: nil}
+	ch <- processInstanceResult{RecognizeResponseItem: RecognizeResponseItem{
+		Location: &FileLocation{Bucket: bucket, Key: uploadKey},
+		Label:    *label.Name,
+		Conf:     *inst.Confidence,
+	}, err: nil}
 }
 
 // Process results returned from aws rekognize service
-func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket string, key string, r *rekognition.DetectLabelsOutput) ([]*FileLocation, error) {
+func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket string, key string, r *rekognition.DetectLabelsOutput) ([]*RecognizeResponseItem, error) {
 	defer elapsed("processRecognizeResult")()
-	var files []*FileLocation
+	var items []*RecognizeResponseItem
 
 	src, err := s.downloadSource(bucket, key)
 	if err != nil {
@@ -184,7 +187,7 @@ func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket strin
 		if instRes.err != nil {
 			return nil, err
 		}
-		files = append(files, &FileLocation{Bucket: instRes.bucket, Key: instRes.key})
+		items = append(items, &instRes.RecognizeResponseItem)
 	}
-	return files, nil
+	return items, nil
 }

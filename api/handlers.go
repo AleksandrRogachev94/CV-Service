@@ -13,6 +13,12 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type ResultItem struct {
+	Conf float64 `json:"conf"`
+	// Label string  `json:"label"`
+	URL string `json:"url"`
+}
+
 func healthHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNoContent)
@@ -71,17 +77,24 @@ func recognize(grpcClient CVServiceClient) http.Handler {
 
 		// send request to from grpc channel
 		file := FileLocation{Bucket: data["bucket"], Key: data["key"]}
-		files, err := grpcClient.Recognize(ctx, &RecognizeRequest{File: &file})
+		response, err := grpcClient.Recognize(ctx, &RecognizeRequest{File: &file})
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			w.Write([]byte(err.Error()))
 			return
 		}
-		fmt.Println(files)
+
+		resultItemsDict := make(map[string][]ResultItem)
+		for _, item := range response.Items {
+			resultItemsDict[item.Label] = append(resultItemsDict[item.Label], ResultItem{
+				URL:  "https://" + item.Location.Bucket + ".s3.amazonaws.com/" + item.Location.Key,
+				Conf: item.Conf,
+			})
+		}
 
 		// respond with received todo
 		w.Header().Set("Content-Type", "application/json")
-		if err := json.NewEncoder(w).Encode(files); err != nil {
+		if err := json.NewEncoder(w).Encode(resultItemsDict); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
