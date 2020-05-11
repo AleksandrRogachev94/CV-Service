@@ -41,7 +41,7 @@ func main() {
 	}
 	uploader := s3manager.NewUploader(sess)
 
-	port := viper.Get("PORT").(string)
+	port := "8080"
 	router := mux.NewRouter()
 
 	server := &http.Server{

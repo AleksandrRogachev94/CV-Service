@@ -15,8 +15,6 @@ services:
     volumes:
       - ./processor:/app
       - /app/bin
-    environment:
-      - PORT=8081
 
   api:
     build:
@@ -26,7 +24,6 @@ services:
       - ./api:/app
       - /app/bin
     environment:
-      - PORT=8080
       - PROCESSOR_ADDRESS=processor:8081
 
   client:

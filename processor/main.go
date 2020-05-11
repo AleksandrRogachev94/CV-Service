@@ -14,7 +14,7 @@ func main() {
 	viper.SetConfigFile(".env")
 	viper.ReadInConfig()
 
-	port := viper.Get("PORT").(string)
+	port := "8081"
 	lis, err := net.Listen("tcp", ":"+port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)

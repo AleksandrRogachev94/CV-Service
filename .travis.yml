@@ -17,3 +17,15 @@ after_success:
   - docker push alexrogachev/cv-api
   - docker push alexrogachev/cv-processor
   - docker push alexrogachev/cv-nginx
+
+deploy:
+  provider: elasticbeanstalk
+  region: us-east-1
+  app: cv-service
+  env: CvService-env
+  bucket_name: elasticbeanstalk-us-east-1-099877879948
+  bucket_path: cv-service
+  on:
+    branch: master
+  access_key_id: $AWS_ACCESS_KEY
+  secret_access_key: $AWS_SECRET_KEY
