@@ -13,7 +13,10 @@
       "image": "alexrogachev/cv-api",
       "hostname": "api",
       "essential": false,
-      "memory": 256
+      "memory": 256,
+      "links": [
+        "processor"
+      ]
     },
     {
       "name": "processor",
