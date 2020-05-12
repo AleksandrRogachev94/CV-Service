@@ -115,6 +115,7 @@ func upload(uploader *s3manager.Uploader) http.Handler {
 			ContentType: &contentType,
 		})
 		if err != nil {
+			w.Write([]byte(err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
