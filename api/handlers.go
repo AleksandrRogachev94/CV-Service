@@ -118,6 +118,7 @@ func upload(uploader *s3manager.Uploader) http.Handler {
 		})
 		fmt.Println("############# 1", key, bucket)
 		if err != nil {
+			fmt.Printf("@@@@ %v", err)
 			w.Write([]byte(err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
 			return
