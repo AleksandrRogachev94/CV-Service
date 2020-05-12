@@ -11,10 +11,12 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rekognition"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/spf13/viper"
 )
 
 // Helper function to measure execution time
@@ -42,8 +44,8 @@ type cvServiceServer struct {
 // Create new grpc server instance
 func newServer() *cvServiceServer {
 	sess, err := session.NewSession(&aws.Config{
-		Region: aws.String("us-east-1"),
-		// Credentials: credentials.NewStaticCredentials(viper.Get("AWS_ACCESS_KEY").(string), viper.Get("AWS_SECRET").(string), ""),
+		Region:      aws.String("us-east-1"),
+		Credentials: credentials.NewStaticCredentials(viper.Get("AWS_ACCESS_KEY").(string), viper.Get("AWS_SECRET_KEY").(string), ""),
 	})
 	if err != nil {
 		log.Fatalf("failed to configure aws: %v", err)

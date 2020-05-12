@@ -13,10 +13,9 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type ResultItem struct {
+type resultItem struct {
 	Conf float64 `json:"conf"`
-	// Label string  `json:"label"`
-	URL string `json:"url"`
+	URL  string  `json:"url"`
 }
 
 func healthHandler() http.Handler {
@@ -84,9 +83,9 @@ func recognize(grpcClient CVServiceClient) http.Handler {
 			return
 		}
 
-		resultItemsDict := make(map[string][]ResultItem)
+		resultItemsDict := make(map[string][]resultItem)
 		for _, item := range response.Items {
-			resultItemsDict[item.Label] = append(resultItemsDict[item.Label], ResultItem{
+			resultItemsDict[item.Label] = append(resultItemsDict[item.Label], resultItem{
 				URL:  "https://" + item.Location.Bucket + ".s3.amazonaws.com/" + item.Location.Key,
 				Conf: item.Conf,
 			})
@@ -103,10 +102,8 @@ func recognize(grpcClient CVServiceClient) http.Handler {
 
 func upload(uploader *s3manager.Uploader) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("#############")
 		bucket := "go-cvservice-assets"
 		key := (uuid.New()).String() + ".jpg"
-		fmt.Println("############# 0", key, bucket)
 		acl := "public-read"
 		contentType := "image/jpeg"
 		_, err := uploader.Upload(&s3manager.UploadInput{
@@ -116,14 +113,11 @@ func upload(uploader *s3manager.Uploader) http.Handler {
 			ACL:         &acl,
 			ContentType: &contentType,
 		})
-		fmt.Println("############# 1", key, bucket)
 		if err != nil {
-			fmt.Printf("@@@@ %v", err)
-			w.Write([]byte(err.Error()))
 			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(err.Error()))
 			return
 		}
-		fmt.Println("############# 2", key, bucket)
 		file := FileLocation{Key: key, Bucket: bucket}
 		w.Header().Set("Content-Type", "application/json")
 		if err := json.NewEncoder(w).Encode(file); err != nil {
