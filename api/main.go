@@ -33,9 +33,15 @@ func main() {
 	client := NewCVServiceClient(conn)
 	logger.Println("Connected to grpc")
 
+	var creds *credentials.Credentials
+	if viper.Get("AWS_ACCESS_KEY") != nil {
+		creds = credentials.NewStaticCredentials(viper.Get("AWS_ACCESS_KEY").(string), viper.Get("AWS_SECRET_KEY").(string), "")
+	} else {
+		creds = nil
+	}
 	sess, err := session.NewSession(&aws.Config{
 		Region:      aws.String("us-east-1"),
-		Credentials: credentials.NewStaticCredentials(viper.Get("AWS_ACCESS_KEY").(string), viper.Get("AWS_SECRET_KEY").(string), ""),
+		Credentials: creds,
 	})
 	if err != nil {
 		logger.Fatalf("failed to configure aws: %v", err)
