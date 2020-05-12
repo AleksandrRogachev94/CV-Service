@@ -13,7 +13,7 @@ const Upload = () => {
   }, [])
   return (
     <>
-      <Typography variant="h3">Upload New Image</Typography>
+      <Typography variant="h3" style={{ textAlign: 'center' }}>Process New Image</Typography>
       <UploadFile />
     </>
   );

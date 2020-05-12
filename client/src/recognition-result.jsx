@@ -6,10 +6,12 @@ import MenuItem from '@material-ui/core/MenuItem';
 import InputLabel from '@material-ui/core/InputLabel';
 import FormControl from '@material-ui/core/FormControl';
 import Paper from '@material-ui/core/Paper';
+import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/core/styles';
 
 const useStyles = makeStyles((theme) => ({
   selectLabel: {
+    textAlign: 'center',
     margin: '1em auto',
     padding: '1em',
     width: '30%',
@@ -17,26 +19,55 @@ const useStyles = makeStyles((theme) => ({
       width: '80%'
     }
   },
-  imageResult: {
-    marginTop: '1em',
-    height: '200px',
+  selectedLabel: {
+    textAlign: 'center'
+  },
+  sourceImage: {
+    margin: theme.spacing(2),
+    textAlign: 'center',
     '& img': {
-      height: '100%'
+      width: '50%',
     }
-  }
+  },
+
+  resultItem: {
+    marginTop: '1em',
+    textAlign: 'center',
+    margin: '0 auto',
+  },
+  imageResult: {
+    height: '250px',
+    '& img': {
+      height: '250px'
+    }
+  },
 }));
 
-const RecognitionResult = ({ results }) => {
+const RecognitionResult = ({ results, sourceUrl }) => {
   const classes = useStyles();
   const labels = Object.keys(results);
   const [selectedLabel, setSelectedLabel] = useState(labels[0]);
-  console.log(results, selectedLabel)
   const handleChange = ({ target: { value } }) => {
     setSelectedLabel(value);
   };
 
+  if (!results || Object.keys(results).length <= 0) {
+    return (
+      <Box>
+        <Typography>No Results</Typography>
+      </Box>
+    )
+  }
+
   return (
     <Box>
+      {sourceUrl && (
+        <Box className={classes.sourceImage}>
+          <Typography variant="h5">Source Image</Typography>
+          <img src={sourceUrl} />
+        </Box>
+      )}
+
       <Paper className={classes.selectLabel}>
         <FormControl>
           <InputLabel id="select-label">Label</InputLabel>
@@ -54,16 +85,14 @@ const RecognitionResult = ({ results }) => {
       </Paper>
 
       {results && selectedLabel && (
-        <>
-          <h4>{selectedLabel}</h4>
-          {results[selectedLabel].map(image => (
-            <div key={image.url} className={classes.imageResult} >
-              <a target="_blank" href={image.url}>
-                <img src={image.url} />
-              </a>
-            </div>
-          ))}
-        </>
+        results[selectedLabel].map(image => (
+          <Box key={image.url} className={classes.resultItem} >
+            <Typography variant="subtitle1">Confidence: {image.conf.toFixed(2)}</Typography>
+            <a href={image.url} className={classes.imageResult}>
+              <img src={image.url} />
+            </a>
+          </Box>
+        ))
       )}
     </Box>
   );
@@ -74,6 +103,7 @@ RecognitionResult.propTypes = {
     conf: PropTypes.number.isRequired,
     url: PropTypes.string.isRequired,
   }))).isRequired,
+  sourceUrl: PropTypes.string.isRequired,
 };
 
 export default RecognitionResult;

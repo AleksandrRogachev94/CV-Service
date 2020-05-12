@@ -8,6 +8,7 @@ import (
 	"image/jpeg"
 	"image/png"
 	"log"
+	"sort"
 	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -195,5 +196,8 @@ func (s *cvServiceServer) processRecognizeResult(c context.Context, bucket strin
 		}
 		items = append(items, &instRes.RecognizeResponseItem)
 	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].Conf > items[j].Conf
+	})
 	return items, nil
 }
