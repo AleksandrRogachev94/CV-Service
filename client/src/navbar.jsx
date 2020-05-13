@@ -29,9 +29,9 @@ const Navbar = () => {
         <Toolbar>
           <Typography variant="h6" className={classes.title}>
             CV Service
-            </Typography>
-          <Button color="inherit">Login</Button>
-          <Button color="inherit" component={Link} to="/">Upload</Button>
+          </Typography>
+          <Button color="inherit" component={Link} to="/login">Login</Button>
+          <Button color="inherit" component={Link} to="/">Extract Entities</Button>
           <Button color="inherit" component={Link} to="/about">About</Button>
         </Toolbar>
       </AppBar>

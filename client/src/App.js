@@ -6,6 +6,7 @@ import Navbar from './navbar';
 import Footer from './footer';
 import About from './about';
 import Upload from './upload';
+import Login from './login';
 import { makeStyles } from '@material-ui/core/styles';
 
 import Container from '@material-ui/core/Container';
@@ -51,6 +52,7 @@ function App() {
             <Switch>
               <Route exact path="/" component={Upload} />
               <Route exact path="/about" component={About} />
+              <Route exact path="/login" component={Login} />
             </Switch>
           </Paper>
         </Container>
