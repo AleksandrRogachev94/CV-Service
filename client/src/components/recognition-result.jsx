@@ -77,7 +77,7 @@ const RecognitionResult = ({ results, sourceUrl }) => {
             value={selectedLabel}
             onChange={handleChange}
           >
-            {labels.map(label => (
+            {labels && labels.map(label => (
               <MenuItem key={label} value={label}>{label}</MenuItem>
             ))}
           </Select>
@@ -85,7 +85,7 @@ const RecognitionResult = ({ results, sourceUrl }) => {
       </Paper>
 
       {results && selectedLabel && (
-        results[selectedLabel].map(image => (
+        results[selectedLabel] && results[selectedLabel].map(image => (
           <Box key={image.url} className={classes.resultItem} >
             <Typography variant="subtitle1">Confidence: {image.conf.toFixed(2)}%</Typography>
             <a href={image.url} className={classes.imageResult}>
