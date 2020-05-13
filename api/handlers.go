@@ -102,6 +102,8 @@ func recognize(grpcClient CVServiceClient) http.Handler {
 
 func upload(uploader *s3manager.Uploader) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 10 mb
+		r.Body = http.MaxBytesReader(w, r.Body, 10048576)
 		bucket := "go-cvservice-assets"
 		key := (uuid.New()).String() + ".jpg"
 		acl := "public-read"
