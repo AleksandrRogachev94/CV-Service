@@ -2,11 +2,11 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import axios from 'axios';
 
-import Navbar from './navbar';
-import Footer from './footer';
-import About from './about';
-import Upload from './upload';
-import Login from './login';
+import Navbar from './components/navbar';
+import Footer from './components/footer';
+import About from './components/about';
+import Upload from './components/upload';
+import Login from './components/login';
 import { makeStyles } from '@material-ui/core/styles';
 
 import Container from '@material-ui/core/Container';

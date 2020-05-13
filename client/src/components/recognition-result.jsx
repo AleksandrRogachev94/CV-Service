@@ -64,7 +64,7 @@ const RecognitionResult = ({ results, sourceUrl }) => {
       {sourceUrl && (
         <Box className={classes.sourceImage}>
           <Typography variant="h5">Source Image</Typography>
-          <img src={sourceUrl} />
+          <img src={sourceUrl} alt="source" />
         </Box>
       )}
 
@@ -89,7 +89,7 @@ const RecognitionResult = ({ results, sourceUrl }) => {
           <Box key={image.url} className={classes.resultItem} >
             <Typography variant="subtitle1">Confidence: {image.conf.toFixed(2)}%</Typography>
             <a href={image.url} className={classes.imageResult}>
-              <img src={image.url} />
+              <img src={image.url} alt="result" />
             </a>
           </Box>
         ))
