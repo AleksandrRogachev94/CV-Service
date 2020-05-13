@@ -45,7 +45,7 @@ const useStyles = makeStyles((theme) => ({
 
 const RecognitionResult = ({ results, sourceUrl }) => {
   const classes = useStyles();
-  const labels = Object.keys(results);
+  const labels = results && Object.keys(results);
   const [selectedLabel, setSelectedLabel] = useState(labels[0]);
   const handleChange = ({ target: { value } }) => {
     setSelectedLabel(value);
@@ -87,7 +87,7 @@ const RecognitionResult = ({ results, sourceUrl }) => {
       {results && selectedLabel && (
         results[selectedLabel].map(image => (
           <Box key={image.url} className={classes.resultItem} >
-            <Typography variant="subtitle1">Confidence: {image.conf.toFixed(2)}</Typography>
+            <Typography variant="subtitle1">Confidence: {image.conf.toFixed(2)}%</Typography>
             <a href={image.url} className={classes.imageResult}>
               <img src={image.url} />
             </a>

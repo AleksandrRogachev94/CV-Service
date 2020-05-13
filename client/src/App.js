@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
+import axios from 'axios';
 
 import Navbar from './navbar';
 import Footer from './footer';
@@ -28,6 +29,18 @@ const useStyles = makeStyles((theme) => ({
 
 function App() {
   const classes = useStyles();
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get('/api/health');
+        console.log(res);
+      } catch (err) {
+        console.error(err);
+        alert('Server is currently down. Please try again later');
+      }
+    })();
+  }, []);
 
   return (
     <Router>
