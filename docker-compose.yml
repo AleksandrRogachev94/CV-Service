@@ -25,6 +25,7 @@ services:
       - /app/bin
     environment:
       - PROCESSOR_ADDRESS=processor:8081
+      - BUCKET=go-cvservice-assets
 
   client:
     stdin_open: true
