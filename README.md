@@ -19,7 +19,7 @@ The following diagram represents overall architecture of this project:
 As of right now, only one major features was implemented - extracting entites from images and preparing them for downloading. Here is how it works:
 1. Client makes a request to API to upload a file (`POST /upload`)
 2. API uploads data to s3 bucket and returns bucket and key
-3. UI uses the bucket and the key to makes a second request to API to extract entities (`POST /recognitions`). 
+3. UI uses the bucket and the key to make a second request to API to extract entities (`POST /recognitions`). 
 4. API calls GRPC method to process the image.
 5. Processor downloads the image, calls AWS to extract entities, and extacts + uploads new images according to the AWS results. The last step is done in-parallel, via go routines. After that, Processor returns resulting bucket+key pairs to API
 6. API sends results to Client.
