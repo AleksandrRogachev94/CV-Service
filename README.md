@@ -31,6 +31,8 @@ Ensure that you have docker cli installed, clone the repo, and run from the root
 docker-compose up --build
 ```
 
+It will install all the required images and run the containers. When it's finished, go to `http://localhost:8080`. API is accessible via `http://localhost:8080/api`.
+
 To use the app, you need AWS credentials to access S3 and Rekognition services. Add `.env` file in both API and Processor folders.
 
 ```bash
@@ -39,9 +41,6 @@ AWS_SECRET_KEY=your-secret-key
 ```
 
 These variables are set automatically in deployment environment.
-
-
-It will install all the required images and run the containers. When it's finished, go to `http://localhost:8080`. API is accessible via `http://localhost:8080/api`.
 
 
 ## 3.Development
