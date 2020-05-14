@@ -6,7 +6,7 @@ import Box from '@material-ui/core/Box';
 const Login = () => {
   return (
     <Box>
-      <Typography variant="h3">This feature coming soon!</Typography>
+      <Typography variant="h3">This feature is coming soon!</Typography>
     </Box>
   );
 };
