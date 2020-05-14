@@ -1,5 +1,5 @@
 # Computer Vision Service
-Currently deployed to http://cvservice-env.eba-qin4ium4.us-east-1.elasticbeanstalk.com/about
+Currently deployed to http://cvservice-env.eba-qin4ium4.us-east-1.elasticbeanstalk.com
 
 ## Table of Contents
 1. [About](#1.-about)
@@ -38,12 +38,8 @@ AWS_ACCESS_KEY=your-access-key
 AWS_SECRET_KEY=your-secret-key
 ```
 
-This variables are set automatically in deployment environment.
+These variables are set automatically in deployment environment.
 
-PROCESSOR:
-
-```bash
-```
 
 It will install all the required images and run the containers. When it's finished, go to `http://localhost:8080`. API is accessible via `http://localhost:8080/api`.
 
