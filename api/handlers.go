@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	fmt "fmt"
 	"net/http"
 	"time"
 
@@ -24,6 +23,7 @@ func healthHandler() http.Handler {
 	})
 }
 
+// TODO
 func recognizeIndex() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// get url params
@@ -41,6 +41,7 @@ func recognizeIndex() http.Handler {
 	})
 }
 
+// TODO
 func recognizeShow() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// get url params
@@ -60,11 +61,8 @@ func recognizeShow() http.Handler {
 
 func recognize(grpcClient CVServiceClient) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
-		t, _ := ctx.Deadline()
-		fmt.Println("--->", t)
 
 		var data map[string]string
 		err := json.NewDecoder(r.Body).Decode(&data)
@@ -74,7 +72,7 @@ func recognize(grpcClient CVServiceClient) http.Handler {
 			return
 		}
 
-		// send request to from grpc channel
+		// send request to grpc channel
 		file := FileLocation{Bucket: data["bucket"], Key: data["key"]}
 		response, err := grpcClient.Recognize(ctx, &RecognizeRequest{File: &file})
 		if err != nil {
@@ -83,6 +81,7 @@ func recognize(grpcClient CVServiceClient) http.Handler {
 			return
 		}
 
+		// map grpc response to a different format
 		resultItemsDict := make(map[string][]resultItem)
 		for _, item := range response.Items {
 			resultItemsDict[item.Label] = append(resultItemsDict[item.Label], resultItem{
@@ -102,7 +101,7 @@ func recognize(grpcClient CVServiceClient) http.Handler {
 
 func upload(uploader *s3manager.Uploader) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 10 mb
+		// Allow uploads up to 10 mb
 		r.Body = http.MaxBytesReader(w, r.Body, 10048576)
 		bucket := "go-cvservice-assets"
 		key := (uuid.New()).String() + ".jpg"
