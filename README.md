@@ -24,7 +24,7 @@ As of right now, only one major features was implemented - extracting entites fr
 5. Processor downloads the image, calls AWS to extract entities, and extacts + uploads new images according to the AWS results. The last step is done in-parallel, via go routines. After that, Processor returns resulting bucket+key pairs to API
 6. API sends results to Client.
 
-## 2. Setup
+## 2. Setup and Run
 Ensure that you have docker cli installed, clone the repo, and run from the root directory:
 
 ```bash
@@ -43,7 +43,7 @@ AWS_SECRET_KEY=your-secret-key
 These variables are set automatically in deployment environment.
 
 
-## 3.Development
+## 3. Development Notes
 Docker definitions are stored in Dockerfile.dev files in each folder. 
 This project uses hot reloading and docker volumes in all containers (Client, API, and Processor). Whenever there is any change in source file, the corresponding docker restarts.
 
