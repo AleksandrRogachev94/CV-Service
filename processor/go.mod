@@ -3,10 +3,9 @@ module microservices/processor
 go 1.13
 
 require (
-	github.com/aws/aws-sdk-go v1.29.31
+	github.com/aws/aws-sdk-go v1.33.0
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/golang/protobuf v1.3.5
-	github.com/jmespath/go-jmespath v0.3.0 // indirect
 	github.com/mitchellh/mapstructure v1.2.2 // indirect
 	github.com/pelletier/go-toml v1.6.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
